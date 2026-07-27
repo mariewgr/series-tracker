@@ -255,7 +255,19 @@ details.season[open] summary .chev{transform:rotate(180deg)}
     <input type="password" class="search" id="authPassword" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
     <button class="authbtn" id="authSubmitBtn">Se connecter</button>
     <button class="authlink" id="authToggleBtn">Pas de compte ? Crée-en un</button>
+    <button class="authlink" id="forgotPasswordBtn">Mot de passe oublié ?</button>
     <p class="autherr" id="authError"></p>
+  </div>
+</div>
+
+<div class="authwrap hidden" id="recoveryScreen">
+  <div class="authcard">
+    <div class="authlogo" id="recoveryLogo"></div>
+    <h1>Mes <span>Séries</span></h1>
+    <p class="authsub">Choisis un nouveau mot de passe pour ton compte.</p>
+    <input type="password" class="search" id="recoveryPassword" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
+    <button class="authbtn" id="recoverySubmitBtn">Valider le nouveau mot de passe</button>
+    <p class="autherr" id="recoveryError"></p>
   </div>
 </div>
 
@@ -383,6 +395,7 @@ function initSupabase(){
 function renderAuthMode(){
   document.getElementById('authSubmitBtn').textContent = authMode==='signin' ? 'Se connecter' : 'Créer le compte';
   document.getElementById('authToggleBtn').textContent = authMode==='signin' ? 'Pas de compte ? Crée-en un' : 'Déjà un compte ? Se connecter';
+  document.getElementById('forgotPasswordBtn').style.display = authMode==='signin' ? 'block' : 'none';
 }
 function translateAuthError(msg){
   if(/invalid login credentials/i.test(msg)) return 'Email ou mot de passe incorrect.';
@@ -423,6 +436,49 @@ async function handleAuthSubmit(){
 async function logout(){
   if(supabaseClient) await supabaseClient.auth.signOut();
 }
+async function handleForgotPassword(){
+  const email = document.getElementById('authEmail').value.trim();
+  const errEl = document.getElementById('authError');
+  errEl.style.color = 'var(--red)';
+  errEl.textContent = '';
+  if(!email){ errEl.textContent = "Entre ton email dans le champ ci-dessus d'abord."; return; }
+  if(!supabaseClient){ errEl.textContent = "Supabase n'est pas configuré."; return; }
+  const btn = document.getElementById('forgotPasswordBtn');
+  btn.disabled = true;
+  try{
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+    if(error) throw error;
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = 'Email envoyé (si ce compte existe) ! Clique sur le lien reçu pour choisir un nouveau mot de passe.';
+  }catch(e){
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = translateAuthError(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+  }
+}
+async function handleRecoverySubmit(){
+  const password = document.getElementById('recoveryPassword').value;
+  const errEl = document.getElementById('recoveryError');
+  errEl.style.color = 'var(--red)';
+  errEl.textContent = '';
+  if(!password || password.length < 6){ errEl.textContent = 'Mot de passe trop court (6 caractères minimum).'; return; }
+  const btn = document.getElementById('recoverySubmitBtn');
+  btn.disabled = true;
+  try{
+    const { error } = await supabaseClient.auth.updateUser({ password });
+    if(error) throw error;
+    document.getElementById('recoveryScreen').classList.add('hidden');
+    toast('Mot de passe mis à jour !');
+    const { data } = await supabaseClient.auth.getSession();
+    handleSession(data.session);
+  }catch(e){
+    errEl.textContent = translateAuthError(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+  }
+}
 async function handleSession(session){
   if(session && session.user){
     currentUser = session.user;
@@ -438,13 +494,21 @@ async function handleSession(session){
 }
 async function initAuth(){
   document.getElementById('authLogo').innerHTML = I('tv');
+  document.getElementById('recoveryLogo').innerHTML = I('tv');
   renderAuthMode();
   if(!supabaseClient){
     document.getElementById('authSub').textContent = "Configuration Supabase manquante — complète supabase-config.js (voir README) pour activer les comptes.";
     document.getElementById('authSubmitBtn').disabled = true;
     return;
   }
-  supabaseClient.auth.onAuthStateChange((_event, session) => handleSession(session));
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if(event === 'PASSWORD_RECOVERY'){
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('recoveryScreen').classList.remove('hidden');
+      return;
+    }
+    handleSession(session);
+  });
   const { data } = await supabaseClient.auth.getSession();
   handleSession(data.session);
 }
@@ -1024,6 +1088,11 @@ document.getElementById('authToggleBtn').addEventListener('click', ()=>{
 });
 document.getElementById('authPassword').addEventListener('keydown', e=>{
   if(e.key==='Enter') handleAuthSubmit();
+});
+document.getElementById('forgotPasswordBtn').addEventListener('click', handleForgotPassword);
+document.getElementById('recoverySubmitBtn').addEventListener('click', handleRecoverySubmit);
+document.getElementById('recoveryPassword').addEventListener('keydown', e=>{
+  if(e.key==='Enter') handleRecoverySubmit();
 });
 
 renderSettings();

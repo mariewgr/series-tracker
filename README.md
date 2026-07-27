@@ -32,6 +32,16 @@ connexion s'affiche avec un message "Configuration Supabase manquante".
    ```
 6. Ouvre `index.html`, crée ton compte depuis l'écran de connexion, et c'est parti.
 
+### Mot de passe oublié
+
+L'écran de connexion a un lien "Mot de passe oublié ?" qui envoie un email de
+réinitialisation (`supabase.auth.resetPasswordForEmail`). Pour que le lien reçu par
+email ramène correctement vers l'app, ajoute son URL dans *Authentication* →
+*URL Configuration* → *Redirect URLs* sur Supabase :
+- en local : peu fiable (URL `file://`, souvent refusée) — teste plutôt une fois
+  déployée ;
+- une fois déployée : ajoute ton URL Vercel (ex. `https://mes-series.vercel.app`).
+
 ## Déploiement (Vercel)
 
 Le repo est prêt à être déployé tel quel (aucune étape de build) :

@@ -38,7 +38,9 @@ create policy "Les utilisateurs suppriment leurs propres séries"
   using (auth.uid() = user_id);
 
 -- Maintient updated_at à jour automatiquement
-create or replace function public.set_updated_at()
+-- (nom de fonction préfixé "shows_" pour ne pas entrer en conflit avec
+-- d'autres fonctions déjà présentes si tu réutilises un projet existant)
+create or replace function public.shows_set_updated_at()
 returns trigger as $$
 begin
   new.updated_at = now();
@@ -46,9 +48,10 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists shows_set_updated_at on public.shows;
 create trigger shows_set_updated_at
   before update on public.shows
-  for each row execute function public.set_updated_at();
+  for each row execute function public.shows_set_updated_at();
 
 -- Index pour trier/filtrer rapidement par utilisateur
 create index if not exists shows_user_id_idx on public.shows(user_id);

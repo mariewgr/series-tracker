@@ -336,7 +336,7 @@ details.season[open] summary .chev{transform:rotate(180deg)}
 </nav>
 </div>
 
-<script src="config.js"></script>
+<script src="supabase-config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 /* ---------- Icônes ---------- */
@@ -398,7 +398,7 @@ async function handleAuthSubmit(){
   errEl.style.color = 'var(--red)';
   errEl.textContent = '';
   if(!email || !password){ errEl.textContent = 'Renseigne un email et un mot de passe.'; return; }
-  if(!supabaseClient){ errEl.textContent = "Supabase n'est pas configuré (voir config.js et le README)."; return; }
+  if(!supabaseClient){ errEl.textContent = "Supabase n'est pas configuré (voir supabase-config.js et le README)."; return; }
   const btn = document.getElementById('authSubmitBtn');
   btn.disabled = true;
   try{
@@ -440,7 +440,7 @@ async function initAuth(){
   document.getElementById('authLogo').innerHTML = I('tv');
   renderAuthMode();
   if(!supabaseClient){
-    document.getElementById('authSub').textContent = "Configuration Supabase manquante — complète config.js (voir README) pour activer les comptes.";
+    document.getElementById('authSub').textContent = "Configuration Supabase manquante — complète supabase-config.js (voir README) pour activer les comptes.";
     document.getElementById('authSubmitBtn').disabled = true;
     return;
   }

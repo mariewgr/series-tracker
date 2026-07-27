@@ -25,7 +25,7 @@ connexion s'affiche avec un message "Configuration Supabase manquante".
 4. **Récupère tes clés** : *Project Settings* → *API*. Copie *Project URL* et la clé
    *anon public* (cette clé est faite pour être exposée côté client — la sécurité vient
    des règles RLS créées à l'étape 2, pas du secret de la clé).
-5. **Colle-les dans [`config.js`](config.js)** :
+5. **Colle-les dans [`supabase-config.js`](supabase-config.js)** :
    ```js
    window.SUPABASE_URL = 'https://xxxxxxxxxxxx.supabase.co';
    window.SUPABASE_ANON_KEY = 'eyJhbGciOi...';
@@ -41,7 +41,7 @@ Le repo est prêt à être déployé tel quel (aucune étape de build) :
 3. Laisse les réglages par défaut (Vercel détecte un site statique) et déploie.
 4. Chaque `git push` sur la branche principale redéploie automatiquement.
 
-`config.js` contenant tes clés Supabase (publiques par design), il est déployé avec le
+`supabase-config.js` contenant tes clés Supabase (publiques par design), il est déployé avec le
 reste du site sans configuration supplémentaire.
 
 ## Structure du projet
@@ -49,7 +49,7 @@ reste du site sans configuration supplémentaire.
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Toute l'application (UI, logique, appels TVMaze/Supabase) |
-| `config.js` | URL + clé anon de ton projet Supabase |
+| `supabase-config.js` | URL + clé anon de ton projet Supabase |
 | `supabase-schema.sql` | Script SQL à exécuter une fois dans Supabase |
 | `manifest.webmanifest`, `icon-*.png` | Icônes / installation en PWA |
 | `sw.js` | Service worker (cache de l'app pour un chargement hors-ligne) |

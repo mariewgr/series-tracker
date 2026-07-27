@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mes Séries">
+<meta name="theme-color" content="#0f1117">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mes Séries — suivi de séries</title>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161923;--card:#1c2030;--card2:#242a3d;
+  --txt:#eef1f7;--txt2:#8b93a7;--accent:#5ab4ff;--accent2:#2f8fe0;
+  --gold:#f5c86e;--green:#6ee7a8;--red:#ff8a8a;--orange:#ffb46e;
+  --line:#262b3d;--line2:#2e344a;--radius:16px;
+}
+body[data-theme="clair"]{
+  --bg:#f2f4f8;--bg2:#ffffff;--card:#ffffff;--card2:#eaeef5;
+  --txt:#161a24;--txt2:#666f83;--accent:#1f7fd6;--accent2:#2f8fe0;
+  --line:#e2e6ee;--line2:#d5dbe6;
+}
+body[data-theme="clair"] header{background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.96) 100%)}
+body[data-theme="clair"] nav{background:rgba(255,255,255,.97);border-top-color:var(--line)}
+body[data-theme="clair"] #toast{background:#fff;color:var(--txt)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.icn{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;display:inline-block;flex:none}
+.icn.filled{fill:currentColor}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);color:var(--txt);
+  padding-bottom:calc(70px + env(safe-area-inset-bottom));
+  overscroll-behavior:none;
+}
+header{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(180deg,#12141c 0%,rgba(18,20,28,.96) 100%);
+  padding:calc(14px + env(safe-area-inset-top)) 18px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(8px);
+}
+header h1{font-size:1.35rem;font-weight:800;letter-spacing:.3px}
+header h1 span{color:var(--accent)}
+main{padding:14px 16px calc(30px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+h2{font-size:.8rem;margin:18px 2px 10px;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.tab{display:none}
+.tab.active{display:block}
+
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;
+  background:rgba(15,17,23,.97);backdrop-filter:blur(10px);
+  display:flex;border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+  overflow-x:auto;scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  flex:1;background:none;border:none;color:var(--txt2);min-width:52px;
+  padding:9px 0 7px;font-size:.62rem;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;
+}
+nav button .icn{width:20px;height:20px}
+nav button.active{color:var(--accent)}
+
+/* Search box + filter chips */
+.search{
+  width:100%;background:var(--card);border:1px solid var(--line2);border-radius:12px;
+  color:var(--txt);padding:11px 14px;font-size:1rem;margin-bottom:10px;
+}
+.search::placeholder{color:var(--txt2)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  background:var(--card);border:1px solid var(--line2);color:var(--txt2);
+  padding:7px 14px;border-radius:20px;font-size:.82rem;white-space:nowrap;cursor:pointer;font-weight:600;
+}
+.chip.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+
+/* Show cards */
+.show{
+  background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:10px;
+  display:flex;gap:12px;cursor:pointer;border:1px solid var(--line);
+}
+.poster{width:58px;height:84px;border-radius:8px;object-fit:cover;background:var(--card2);flex:none}
+.sinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.stitle{font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--txt2);flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.badge.a_voir{background:#3a3f55;color:var(--txt2)}
+.badge.en_cours{background:rgba(90,180,255,.18);color:var(--accent)}
+.badge.termine{background:rgba(110,231,168,.18);color:var(--green)}
+.badge.abandonne{background:rgba(255,138,138,.18);color:var(--red)}
+.pbar{height:6px;background:var(--card2);border-radius:6px;overflow:hidden}
+.pfill{height:100%;background:var(--accent2);border-radius:6px}
+.pct{font-size:.72rem;color:var(--txt2)}
+.nextbtn{
+  margin-top:2px;display:flex;align-items:center;gap:6px;background:var(--card2);
+  border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:7px 10px;
+  font-size:.78rem;font-weight:600;cursor:pointer;text-align:left;width:100%;
+}
+.nextbtn .icn{color:var(--accent)}
+.nextbtn:active{background:var(--accent2);color:#fff}
+.nextbtn:active .icn{color:#fff}
+
+/* Search results */
+.result{
+  background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:10px;
+  display:flex;gap:12px;border:1px solid var(--line);align-items:center;cursor:pointer;
+}
+.result.added{opacity:.55}
+.result .sinfo{gap:3px}
+.resmeta{font-size:.78rem;color:var(--txt2);display:flex;align-items:center;gap:4px}
+.resmeta .icn{width:12px;height:12px}
+
+/* Calendrier */
+.calday{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  margin:20px 2px 8px;font-weight:700;font-size:.85rem;color:var(--txt);
+}
+.calday:first-child{margin-top:0}
+.calwhen{font-size:.7rem;color:var(--accent);font-weight:700;background:rgba(90,180,255,.12);padding:2px 9px;border-radius:10px;white-space:nowrap}
+.addbtn{
+  flex:none;width:38px;height:38px;border-radius:12px;border:none;background:var(--accent2);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.addbtn.done{background:var(--card2);color:var(--green)}
+
+/* Empty state */
+.empty{text-align:center;padding:50px 20px;color:var(--txt2)}
+.empty .icn{width:44px;height:44px;margin-bottom:12px;color:var(--txt2)}
+.empty p{font-size:.9rem;margin-top:4px}
+
+/* Overlay / detail sheet */
+.overlay{
+  position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;
+}
+.overlay.hidden{display:none}
+.sheet{
+  background:var(--bg2);width:100%;max-height:92vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
+  margin:0 auto;max-width:640px;
+}
+.sheethead{display:flex;gap:14px;margin-bottom:14px}
+.sheethead .poster{width:84px;height:122px}
+.sheethead .sinfo{gap:6px}
+.sheethead .stitle{font-size:1.2rem;white-space:normal}
+.closebtn{
+  position:sticky;top:0;float:right;width:32px;height:32px;border-radius:10px;border:none;
+  background:var(--card);color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.seg button{
+  flex:1;min-width:80px;background:var(--card);border:1px solid var(--line2);color:var(--txt2);
+  padding:8px 6px;border-radius:10px;font-size:.75rem;font-weight:700;cursor:pointer;
+}
+.seg button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.stars{display:flex;gap:6px;margin:10px 0}
+.stars .icn{width:26px;height:26px;color:var(--line2);cursor:pointer}
+.stars .icn.on{color:var(--gold)}
+.actionsrow{display:flex;gap:8px;margin:14px 0 6px}
+.actionsrow button{
+  flex:1;background:var(--card);border:1px solid var(--line2);color:var(--txt);
+  padding:10px;border-radius:12px;font-size:.8rem;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.actionsrow button.danger{color:var(--red)}
+
+details.season{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+details.season summary{
+  list-style:none;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;font-weight:700;font-size:.9rem;
+}
+details.season summary::-webkit-details-marker{display:none}
+details.season summary .chev{transition:transform .15s}
+details.season[open] summary .chev{transform:rotate(180deg)}
+.seasoncount{color:var(--txt2);font-weight:600;font-size:.78rem}
+.seasonbtns{display:flex;gap:6px;padding:0 14px 10px}
+.seasonbtns button{
+  background:var(--card2);border:1px solid var(--line2);color:var(--txt2);border-radius:8px;
+  padding:5px 10px;font-size:.7rem;font-weight:700;cursor:pointer;
+}
+.ep{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line);font-size:.85rem;cursor:pointer;
+}
+.ep.future{cursor:default;color:var(--txt2)}
+.ep .epchk{flex:none;color:var(--txt2)}
+.ep.watched .epchk{color:var(--green)}
+.epnum{flex:none;color:var(--txt2);font-size:.76rem;width:52px}
+.epname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.epdate{flex:none;font-size:.72rem;color:var(--txt2)}
+
+/* Stats */
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.statcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.statcard b{display:block;font-size:1.5rem}
+.statcard span{font-size:.75rem;color:var(--txt2)}
+
+/* Settings */
+.settingrow{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.settingrow div{font-size:.85rem;font-weight:600}
+.settingrow small{display:block;color:var(--txt2);font-weight:400;font-size:.75rem;margin-top:2px}
+.settingrow button, .settingrow .seg{margin:0}
+.settingrow .seg{display:flex;gap:6px}
+.settingrow .seg button{flex:none;min-width:0;padding:7px 12px}
+
+#toast{
+  position:fixed;bottom:calc(84px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  background:var(--card2);color:var(--txt);padding:10px 18px;border-radius:12px;font-size:.85rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  max-width:80vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+/* Auth */
+#appRoot.hidden{display:none}
+.authwrap{
+  position:fixed;inset:0;z-index:80;background:var(--bg);color:var(--txt);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.authwrap.hidden{display:none}
+.authcard{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px}
+.authlogo{
+  width:52px;height:52px;border-radius:16px;background:var(--accent2);color:#fff;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 4px;
+}
+.authlogo .icn{width:26px;height:26px}
+.authcard h1{text-align:center;font-size:1.4rem;font-weight:800}
+.authcard h1 span{color:var(--accent)}
+.authsub{text-align:center;color:var(--txt2);font-size:.85rem;margin-bottom:6px}
+.authbtn{
+  width:100%;background:var(--accent2);color:#fff;border:none;border-radius:12px;
+  padding:12px;font-size:.95rem;font-weight:700;cursor:pointer;
+}
+.authbtn:disabled{opacity:.6;cursor:default}
+.authlink{background:none;border:none;color:var(--accent);font-size:.82rem;font-weight:600;cursor:pointer;padding:4px}
+.autherr{color:var(--red);font-size:.8rem;text-align:center;min-height:1em}
+.authhint{color:var(--txt2);font-size:.75rem;text-align:center}
+</style>
+</head>
+<body data-theme="sombre">
+
+<div class="authwrap" id="authScreen">
+  <div class="authcard">
+    <div class="authlogo" id="authLogo"></div>
+    <h1>Mes <span>Séries</span></h1>
+    <p class="authsub" id="authSub">Connecte-toi pour retrouver ta bibliothèque, sur tous tes appareils.</p>
+    <input type="email" class="search" id="authEmail" placeholder="Email" autocomplete="email">
+    <input type="password" class="search" id="authPassword" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
+    <button class="authbtn" id="authSubmitBtn">Se connecter</button>
+    <button class="authlink" id="authToggleBtn">Pas de compte ? Crée-en un</button>
+    <p class="autherr" id="authError"></p>
+  </div>
+</div>
+
+<div id="appRoot" class="hidden">
+<header>
+  <h1>Mes <span>Séries</span></h1>
+</header>
+
+<main>
+  <section id="tab-biblio" class="tab active">
+    <input type="text" class="search" id="biblioSearch" placeholder="Chercher dans ma bibliothèque…">
+    <div class="chips" id="biblioChips"></div>
+    <div id="biblioList"></div>
+  </section>
+
+  <section id="tab-search" class="tab">
+    <input type="text" class="search" id="searchInput" placeholder="Chercher une série…">
+    <div id="searchList"></div>
+  </section>
+
+  <section id="tab-upnext" class="tab">
+    <h2>À regarder</h2>
+    <div id="upnextList"></div>
+  </section>
+
+  <section id="tab-calendrier" class="tab">
+    <h2>Prochains épisodes</h2>
+    <div id="calendarList"></div>
+  </section>
+
+  <section id="tab-stats" class="tab">
+    <div class="statgrid" id="statGrid"></div>
+    <h2>Par statut</h2>
+    <div id="statStatus"></div>
+  </section>
+
+  <section id="tab-settings" class="tab">
+    <h2>Compte</h2>
+    <div class="settingrow">
+      <div>Connecté(e)<br><small id="accountEmail"></small></div>
+      <button class="addbtn" id="logoutBtn" style="background:rgba(255,138,138,.15);color:var(--red)" title="Se déconnecter"></button>
+    </div>
+    <h2>Apparence</h2>
+    <div class="settingrow">
+      <div>Thème</div>
+      <div class="seg" id="themeSeg"></div>
+    </div>
+    <h2>Données</h2>
+    <div class="settingrow">
+      <div>Exporter<br><small>Sauvegarder ta bibliothèque en fichier JSON</small></div>
+      <button class="addbtn" id="exportBtn" style="background:var(--card2);color:var(--txt)" title="Exporter"></button>
+    </div>
+    <div class="settingrow">
+      <div>Importer<br><small>Restaurer une sauvegarde JSON</small></div>
+      <label class="addbtn" style="background:var(--card2);color:var(--txt);cursor:pointer" id="importLbl"></label>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+    </div>
+    <div class="settingrow">
+      <div style="color:var(--red)">Tout effacer<br><small>Supprime définitivement toutes les séries</small></div>
+      <button class="addbtn" id="resetBtn" style="background:rgba(255,138,138,.15);color:var(--red)" title="Effacer"></button>
+    </div>
+  </section>
+</main>
+
+<div class="overlay hidden" id="detailOverlay">
+  <div class="sheet" id="sheetContent"></div>
+</div>
+
+<div id="toast"></div>
+
+<nav>
+  <button data-tab="biblio" class="active"></button>
+  <button data-tab="search"></button>
+  <button data-tab="upnext"></button>
+  <button data-tab="calendrier"></button>
+  <button data-tab="stats"></button>
+  <button data-tab="settings"></button>
+</nav>
+</div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ---------- Icônes ---------- */
+const ICONS = {
+  tv: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/>',
+  calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 9h18"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+  bar: '<path d="M4 20V10M12 20V4M20 20v-7"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  circle: '<circle cx="12" cy="12" r="9"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  chevDown: '<path d="M6 9l6 6 6-6"/>',
+  star: '<path d="M12 2l3.1 6.6 7.2.9-5.3 5 1.4 7.1L12 18.2 5.6 21.6 7 14.5 1.7 9.5l7.2-.9z"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>',
+  download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+  upload: '<path d="M12 21V9M7 14l5-5 5 5M4 3h16"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>'
+};
+function I(name, cls){ return '<svg class="icn'+(cls?' '+cls:'')+'" viewBox="0 0 24 24">'+ICONS[name]+'</svg>'; }
+
+/* ---------- État ---------- */
+let state = { theme: localStorage.getItem('seriesTrackerTheme') || 'sombre', shows: [] };
+let currentDetailId = null;
+let biblioFilter = 'tous';
+let currentUser = null;
+let supabaseClient = null;
+let authMode = 'signin';
+
+/* ---------- Supabase : connexion & auth ---------- */
+function initSupabase(){
+  if(!window.supabase || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
+  if(window.SUPABASE_URL.includes('REMPLACE-MOI') || window.SUPABASE_ANON_KEY.includes('REMPLACE-MOI')) return null;
+  return window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+}
+function renderAuthMode(){
+  document.getElementById('authSubmitBtn').textContent = authMode==='signin' ? 'Se connecter' : 'Créer le compte';
+  document.getElementById('authToggleBtn').textContent = authMode==='signin' ? 'Pas de compte ? Crée-en un' : 'Déjà un compte ? Se connecter';
+}
+function translateAuthError(msg){
+  if(/invalid login credentials/i.test(msg)) return 'Email ou mot de passe incorrect.';
+  if(/already registered/i.test(msg)) return 'Un compte existe déjà avec cet email.';
+  if(/password should be at least/i.test(msg)) return 'Mot de passe trop court (6 caractères minimum).';
+  if(/email not confirmed/i.test(msg)) return 'Confirme ton email avant de te connecter (vérifie ta boîte mail).';
+  return msg;
+}
+async function handleAuthSubmit(){
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.style.color = 'var(--red)';
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'Renseigne un email et un mot de passe.'; return; }
+  if(!supabaseClient){ errEl.textContent = "Supabase n'est pas configuré (voir config.js et le README)."; return; }
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  try{
+    if(authMode==='signup'){
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if(error) throw error;
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = 'Compte créé ! Si une confirmation par email est demandée, clique sur le lien reçu puis connecte-toi.';
+      authMode = 'signin';
+      renderAuthMode();
+    }else{
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+    }
+  }catch(e){
+    errEl.style.color = 'var(--red)';
+    errEl.textContent = translateAuthError(e.message || String(e));
+  }finally{
+    btn.disabled = false;
+  }
+}
+async function logout(){
+  if(supabaseClient) await supabaseClient.auth.signOut();
+}
+async function handleSession(session){
+  if(session && session.user){
+    currentUser = session.user;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appRoot').classList.remove('hidden');
+    document.getElementById('accountEmail').textContent = currentUser.email;
+    await loadShows();
+  }else{
+    currentUser = null;
+    document.getElementById('appRoot').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+  }
+}
+async function initAuth(){
+  document.getElementById('authLogo').innerHTML = I('tv');
+  renderAuthMode();
+  if(!supabaseClient){
+    document.getElementById('authSub').textContent = "Configuration Supabase manquante — complète config.js (voir README) pour activer les comptes.";
+    document.getElementById('authSubmitBtn').disabled = true;
+    return;
+  }
+  supabaseClient.auth.onAuthStateChange((_event, session) => handleSession(session));
+  const { data } = await supabaseClient.auth.getSession();
+  handleSession(data.session);
+}
+
+/* ---------- Supabase : lecture / écriture des séries ---------- */
+function rowToShow(row){
+  return {
+    id: row.id,
+    tvId: row.tv_id,
+    name: row.name,
+    poster: row.poster || '',
+    network: row.network || '',
+    avgRuntime: row.avg_runtime || 42,
+    schedule: row.schedule || { days:[], time:'' },
+    status: row.status || 'a_voir',
+    rating: row.rating || 0,
+    dateAdded: row.date_added,
+    seasons: row.seasons || []
+  };
+}
+function showToRow(show){
+  return {
+    tv_id: show.tvId,
+    name: show.name,
+    poster: show.poster,
+    network: show.network,
+    avg_runtime: show.avgRuntime,
+    schedule: show.schedule,
+    status: show.status,
+    rating: show.rating,
+    seasons: show.seasons
+  };
+}
+async function loadShows(){
+  if(!supabaseClient || !currentUser) return;
+  const { data, error } = await supabaseClient.from('shows').select('*').order('date_added', { ascending:false });
+  if(error){ toast('Erreur de chargement de ta bibliothèque'); return; }
+  state.shows = (data||[]).map(rowToShow);
+  renderAll();
+}
+function syncShow(show){
+  if(!supabaseClient) return;
+  supabaseClient.from('shows').update(showToRow(show)).eq('id', show.id).then(({error})=>{
+    if(error) toast('Erreur de synchronisation');
+  });
+}
+async function insertShowRow(show){
+  const payload = { ...showToRow(show), user_id: currentUser.id };
+  const { data, error } = await supabaseClient.from('shows').insert(payload).select().single();
+  if(error) throw error;
+  return data;
+}
+function deleteShowRow(id){
+  if(!supabaseClient) return;
+  supabaseClient.from('shows').delete().eq('id', id).then(({error})=>{
+    if(error) toast('Erreur de suppression');
+  });
+}
+
+/* ---------- Utils ---------- */
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function stripHtml(s){ return String(s||'').replace(/<[^>]*>/g,''); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayIso(){ return new Date().toISOString().slice(0,10); }
+function hasAired(ep){ return !ep.airdate || ep.airdate <= todayIso(); }
+function formatDateShort(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
+}
+function daysUntil(iso){
+  const diff = Math.ceil((new Date(iso+'T00:00:00') - new Date(todayIso()+'T00:00:00')) / 86400000);
+  return diff;
+}
+function dayName(iso){
+  if(!iso) return '';
+  const d = new Date(iso+'T00:00:00');
+  const name = d.toLocaleDateString('fr-FR', {weekday:'long'});
+  return name.charAt(0).toUpperCase()+name.slice(1);
+}
+function frTime(hhmm){
+  if(!hhmm) return '';
+  return hhmm.replace(':','h');
+}
+const FR_DAYS = {Monday:'Lun',Tuesday:'Mar',Wednesday:'Mer',Thursday:'Jeu',Friday:'Ven',Saturday:'Sam',Sunday:'Dim'};
+function frDayAbbrev(enDay){
+  return FR_DAYS[enDay] || enDay.slice(0,3);
+}
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 2200);
+}
+const STATUSES = [['a_voir','À voir'],['en_cours','En cours'],['termine','Terminé'],['abandonne','Abandonné']];
+function statusLabel(s){ const f = STATUSES.find(x=>x[0]===s); return f? f[1] : s; }
+
+/* ---------- Modèle série ---------- */
+function groupEpisodes(episodes){
+  const map = {};
+  episodes.forEach(ep=>{
+    const sn = (ep.season==null? 0 : ep.season);
+    if(!map[sn]) map[sn]=[];
+    map[sn].push({
+      id: ep.id, number: ep.number, name: ep.name || ('Épisode '+ep.number),
+      airdate: ep.airdate || '', airtime: ep.airtime || '', runtime: ep.runtime || null, watched:false
+    });
+  });
+  return Object.keys(map).map(Number).sort((a,b)=>a-b).map(n=>({
+    number:n, episodes: map[n].sort((a,b)=>a.number-b.number)
+  }));
+}
+function buildShow(tv, episodes){
+  return {
+    id: 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+    tvId: tv.id,
+    name: tv.name,
+    poster: tv.image ? (tv.image.medium || tv.image.original) : '',
+    network: (tv.network && tv.network.name) || (tv.webChannel && tv.webChannel.name) || '',
+    avgRuntime: tv.averageRuntime || tv.runtime || 42,
+    schedule: { days: (tv.schedule && tv.schedule.days) || [], time: (tv.schedule && tv.schedule.time) || '' },
+    status: 'a_voir',
+    rating: 0,
+    dateAdded: new Date().toISOString(),
+    seasons: groupEpisodes(episodes)
+  };
+}
+function allEpisodes(show){
+  return show.seasons.flatMap(se => se.episodes.map(ep => ({...ep, season: se.number})));
+}
+function progress(show){
+  const aired = allEpisodes(show).filter(hasAired);
+  return { watched: aired.filter(e=>e.watched).length, total: aired.length };
+}
+function nextEpisode(show){
+  return allEpisodes(show).find(e => !e.watched && hasAired(e));
+}
+function nextUnaired(show){
+  return allEpisodes(show).filter(e=>!hasAired(e)).sort((a,b)=> a.airdate < b.airdate ? -1 : 1)[0];
+}
+function maybeAutoStatus(show){
+  const eps = allEpisodes(show);
+  const aired = eps.filter(hasAired);
+  if(show.status==='abandonne') return;
+  if(aired.length && aired.every(e=>e.watched)){
+    show.status = 'termine';
+  } else if(show.status==='termine'){
+    show.status = 'en_cours';
+  } else if(aired.some(e=>e.watched) && show.status==='a_voir'){
+    show.status = 'en_cours';
+  }
+}
+
+/* ---------- API TVMaze ---------- */
+async function apiSearch(q){
+  const r = await fetch('https://api.tvmaze.com/search/shows?q='+encodeURIComponent(q));
+  if(!r.ok) throw new Error('search failed');
+  const data = await r.json();
+  return data.map(d=>d.show);
+}
+async function apiEpisodes(tvId){
+  const r = await fetch('https://api.tvmaze.com/shows/'+tvId+'/episodes');
+  if(!r.ok) throw new Error('episodes failed');
+  return r.json();
+}
+async function apiShow(tvId){
+  const r = await fetch('https://api.tvmaze.com/shows/'+tvId);
+  if(!r.ok) throw new Error('show failed');
+  return r.json();
+}
+
+/* ---------- Actions ---------- */
+async function addShow(tv){
+  if(!currentUser){ toast('Connecte-toi pour ajouter une série'); return; }
+  if(state.shows.some(s=>s.tvId===tv.id)){ toast('Déjà dans ta bibliothèque'); return; }
+  toast('Ajout de « '+tv.name+' »…');
+  try{
+    const episodes = await apiEpisodes(tv.id);
+    const show = buildShow(tv, episodes);
+    const row = await insertShowRow(show);
+    show.id = row.id;
+    show.dateAdded = row.date_added;
+    state.shows.unshift(show);
+    toast('« '+tv.name+' » ajoutée !');
+    renderSearchList(document.getElementById('searchInput').value);
+    renderBiblio();
+  }catch(e){
+    toast('Erreur réseau, réessaie.');
+  }
+}
+async function refreshShow(showId){
+  const show = state.shows.find(s=>s.id===showId);
+  if(!show) return;
+  toast('Actualisation…');
+  try{
+    const [episodes, tv] = await Promise.all([apiEpisodes(show.tvId), apiShow(show.tvId).catch(()=>null)]);
+    const watchedIds = new Set(allEpisodes(show).filter(e=>e.watched).map(e=>e.id));
+    show.seasons = groupEpisodes(episodes);
+    show.seasons.forEach(se => se.episodes.forEach(ep => { if(watchedIds.has(ep.id)) ep.watched = true; }));
+    if(tv){
+      show.schedule = { days: (tv.schedule && tv.schedule.days) || [], time: (tv.schedule && tv.schedule.time) || '' };
+      show.network = (tv.network && tv.network.name) || (tv.webChannel && tv.webChannel.name) || show.network;
+      show.avgRuntime = tv.averageRuntime || tv.runtime || show.avgRuntime;
+    }
+    maybeAutoStatus(show);
+    syncShow(show);
+    toast('Épisodes à jour');
+    renderDetail(showId);
+    renderBiblio();
+  }catch(e){
+    toast('Erreur réseau, réessaie.');
+  }
+}
+function toggleEpisode(showId, epId){
+  const show = state.shows.find(s=>s.id===showId);
+  for(const se of show.seasons){
+    const ep = se.episodes.find(e=>String(e.id)===String(epId));
+    if(ep){ ep.watched = !ep.watched; break; }
+  }
+  maybeAutoStatus(show);
+  renderDetail(showId);
+  renderBiblio();
+  syncShow(show);
+}
+function quickWatch(showId, epId, ev){
+  if(ev) ev.stopPropagation();
+  toggleEpisode(showId, epId);
+}
+function setSeasonWatched(showId, seasonNumber, val){
+  const show = state.shows.find(s=>s.id===showId);
+  const se = show.seasons.find(s=>s.number===seasonNumber);
+  se.episodes.forEach(e => { if(hasAired(e)) e.watched = val; });
+  maybeAutoStatus(show);
+  renderDetail(showId);
+  renderBiblio();
+  syncShow(show);
+}
+function setStatus(showId, status){
+  const show = state.shows.find(s=>s.id===showId);
+  show.status = status;
+  renderDetail(showId);
+  renderBiblio();
+  syncShow(show);
+}
+function setRating(showId, val){
+  const show = state.shows.find(s=>s.id===showId);
+  show.rating = (show.rating===val) ? 0 : val;
+  renderDetail(showId);
+  renderBiblio();
+  syncShow(show);
+}
+function deleteShow(showId){
+  const show = state.shows.find(s=>s.id===showId);
+  if(!show) return;
+  if(!confirm('Supprimer « '+show.name+' » de ta bibliothèque ?')) return;
+  state.shows = state.shows.filter(s=>s.id!==showId);
+  closeDetail();
+  renderBiblio();
+  toast('Série supprimée');
+  deleteShowRow(showId);
+}
+
+/* ---------- Rendu : Bibliothèque ---------- */
+function renderBiblioChips(){
+  const counts = { tous: state.shows.length };
+  STATUSES.forEach(([k])=> counts[k] = state.shows.filter(s=>s.status===k).length);
+  const chips = [['tous','Tout']].concat(STATUSES);
+  document.getElementById('biblioChips').innerHTML = chips.map(([k,label])=>
+    '<div class="chip'+(biblioFilter===k?' active':'')+'" onclick="setBiblioFilter(\''+k+'\')">'+escapeHtml(label)+' · '+(counts[k]||0)+'</div>'
+  ).join('');
+}
+function setBiblioFilter(k){ biblioFilter = k; renderBiblio(); }
+function renderBiblio(){
+  renderBiblioChips();
+  const q = (document.getElementById('biblioSearch').value||'').toLowerCase().trim();
+  let list = state.shows.slice();
+  if(biblioFilter!=='tous') list = list.filter(s=>s.status===biblioFilter);
+  if(q) list = list.filter(s=>s.name.toLowerCase().includes(q));
+  const el = document.getElementById('biblioList');
+  if(!list.length){
+    el.innerHTML = '<div class="empty">'+I('tv')+'<p>'+(state.shows.length? 'Aucune série ne correspond.' : 'Ta bibliothèque est vide.<br>Va dans « Rechercher » pour ajouter une série.')+'</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(show=>{
+    const p = progress(show);
+    const pct = p.total? Math.round(p.watched/p.total*100) : 0;
+    const next = nextEpisode(show);
+    return '<div class="show" onclick="openDetail(\''+show.id+'\')">'
+      + '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">'
+      + '<div class="sinfo">'
+      + '<div class="stitle">'+escapeHtml(show.name)+'</div>'
+      + '<div class="smeta"><span class="badge '+show.status+'">'+statusLabel(show.status)+'</span>'+(show.network?'<span>'+escapeHtml(show.network)+'</span>':'')+'</div>'
+      + '<div class="pbar"><div class="pfill" style="width:'+pct+'%"></div></div>'
+      + '<div class="pct">'+p.watched+' / '+p.total+' épisodes vus</div>'
+      + (next? '<button class="nextbtn" onclick="quickWatch(\''+show.id+'\',\''+next.id+'\',event)">'+I('check')+' S'+pad(next.season)+'E'+pad(next.number)+' · '+escapeHtml(next.name)+'</button>' : '')
+      + '</div></div>';
+  }).join('');
+}
+
+/* ---------- Rendu : Recherche ---------- */
+let searchDebounce;
+async function renderSearchList(q){
+  const el = document.getElementById('searchList');
+  q = (q||'').trim();
+  if(!q){ el.innerHTML = '<div class="empty">'+I('search')+'<p>Cherche une série par son nom.</p></div>'; return; }
+  el.innerHTML = '<div class="empty"><p>Recherche…</p></div>';
+  try{
+    const results = await apiSearch(q);
+    if(!results.length){ el.innerHTML = '<div class="empty">'+I('search')+'<p>Aucun résultat pour « '+escapeHtml(q)+' ».</p></div>'; return; }
+    el.innerHTML = results.map(tv=>{
+      const already = state.shows.some(s=>s.tvId===tv.id);
+      const year = tv.premiered? tv.premiered.slice(0,4) : '';
+      const network = (tv.network && tv.network.name) || (tv.webChannel && tv.webChannel.name) || '';
+      return '<div class="result'+(already?' added':'')+'" onclick="'+(already?'':'addShow('+JSON.stringify(tv).replace(/"/g,'&quot;')+')')+'">'
+        + '<img class="poster" src="'+escapeHtml(tv.image?tv.image.medium:'')+'" style="width:46px;height:66px" onerror="this.style.visibility=\'hidden\'">'
+        + '<div class="sinfo"><div class="stitle">'+escapeHtml(tv.name)+'</div>'
+        + '<div class="resmeta">'+[year,network].filter(Boolean).map(escapeHtml).join(' · ')+'</div></div>'
+        + '<div class="addbtn'+(already?' done':'')+'">'+(already?I('check'):I('plus'))+'</div>'
+        + '</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML = '<div class="empty">'+I('search')+'<p>Erreur réseau, réessaie.</p></div>';
+  }
+}
+
+/* ---------- Rendu : À suivre ---------- */
+function renderUpNext(){
+  const active = state.shows.filter(s=>s.status==='en_cours' || s.status==='a_voir');
+  const withNext = active.map(s=>({show:s, next:nextEpisode(s)})).filter(x=>x.next);
+  const upEl = document.getElementById('upnextList');
+  if(!withNext.length){
+    upEl.innerHTML = '<div class="empty">'+I('play')+'<p>Rien à regarder pour l\'instant.</p></div>';
+  }else{
+    withNext.sort((a,b)=> (a.show.status==='en_cours'?0:1) - (b.show.status==='en_cours'?0:1));
+    upEl.innerHTML = withNext.map(({show,next})=>
+      '<div class="show" onclick="openDetail(\''+show.id+'\')">'
+      + '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">'
+      + '<div class="sinfo"><div class="stitle">'+escapeHtml(show.name)+'</div>'
+      + '<div class="smeta"><span class="badge '+show.status+'">'+statusLabel(show.status)+'</span></div>'
+      + '<button class="nextbtn" onclick="quickWatch(\''+show.id+'\',\''+next.id+'\',event)">'+I('check')+' S'+pad(next.season)+'E'+pad(next.number)+' · '+escapeHtml(next.name)+'</button>'
+      + '</div></div>'
+    ).join('');
+  }
+}
+
+/* ---------- Rendu : Calendrier (prochaines sorties) ---------- */
+function renderCalendar(){
+  const upcoming = state.shows
+    .filter(s=>s.status!=='abandonne')
+    .map(s=>({show:s, ep:nextUnaired(s)}))
+    .filter(x=>x.ep && x.ep.airdate)
+    .sort((a,b)=>{
+      const ka = a.ep.airdate+'T'+(a.ep.airtime||'00:00');
+      const kb = b.ep.airdate+'T'+(b.ep.airtime||'00:00');
+      return ka<kb? -1 : ka>kb? 1 : 0;
+    });
+  const el = document.getElementById('calendarList');
+  if(!upcoming.length){
+    el.innerHTML = '<div class="empty">'+I('calendar')+'<p>Aucune date de diffusion connue pour tes séries.</p></div>';
+    return;
+  }
+  let html = '';
+  let lastDate = null;
+  upcoming.forEach(({show,ep})=>{
+    if(ep.airdate !== lastDate){
+      lastDate = ep.airdate;
+      const dleft = daysUntil(ep.airdate);
+      const when = dleft===0? "aujourd'hui" : dleft===1? 'demain' : 'dans '+dleft+' j';
+      html += '<div class="calday"><span>'+dayName(ep.airdate)+' '+formatDateShort(ep.airdate)+'</span><span class="calwhen">'+when+'</span></div>';
+    }
+    html += '<div class="show" onclick="openDetail(\''+show.id+'\')">'
+      + '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">'
+      + '<div class="sinfo"><div class="stitle">'+escapeHtml(show.name)+'</div>'
+      + '<div class="smeta">S'+pad(ep.season)+'E'+pad(ep.number)+' · '+escapeHtml(ep.name)+'</div>'
+      + (ep.airtime? '<div class="resmeta">'+I('clock')+' '+frTime(ep.airtime)+(show.network?' · '+escapeHtml(show.network):'')+'</div>' : (show.network? '<div class="resmeta">'+escapeHtml(show.network)+'</div>' : ''))
+      + '</div></div>';
+  });
+  el.innerHTML = html;
+}
+
+/* ---------- Rendu : Stats ---------- */
+function renderStats(){
+  const shows = state.shows;
+  let watchedEp = 0, minutes = 0;
+  shows.forEach(s => allEpisodes(s).forEach(e => { if(e.watched){ watchedEp++; minutes += (e.runtime || s.avgRuntime || 42); } }));
+  const hours = Math.round(minutes/60);
+  const rated = shows.filter(s=>s.rating>0);
+  const avgRating = rated.length? (rated.reduce((a,s)=>a+s.rating,0)/rated.length).toFixed(1) : '–';
+  document.getElementById('statGrid').innerHTML =
+    '<div class="statcard"><b>'+shows.length+'</b><span>Séries suivies</span></div>'
+    + '<div class="statcard"><b>'+watchedEp+'</b><span>Épisodes vus</span></div>'
+    + '<div class="statcard"><b>'+hours+' h</b><span>Temps visionné</span></div>'
+    + '<div class="statcard"><b>'+avgRating+'</b><span>Note moyenne</span></div>';
+  document.getElementById('statStatus').innerHTML = STATUSES.map(([k,label])=>{
+    const n = shows.filter(s=>s.status===k).length;
+    return '<div class="settingrow"><div>'+escapeHtml(label)+'</div><span class="badge '+k+'">'+n+'</span></div>';
+  }).join('');
+}
+
+/* ---------- Rendu : Détail série ---------- */
+function openDetail(showId){
+  currentDetailId = showId;
+  renderDetail(showId);
+  document.getElementById('detailOverlay').classList.remove('hidden');
+}
+function closeDetail(){
+  currentDetailId = null;
+  document.getElementById('detailOverlay').classList.add('hidden');
+}
+function renderDetail(showId){
+  const show = state.shows.find(s=>s.id===showId);
+  if(!show) return;
+  const p = progress(show);
+  const pct = p.total? Math.round(p.watched/p.total*100) : 0;
+  let html = '<button class="closebtn" onclick="closeDetail()">'+I('x')+'</button>';
+  html += '<div class="sheethead">';
+  html += '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">';
+  html += '<div class="sinfo"><div class="stitle">'+escapeHtml(show.name)+'</div>';
+  const sched = show.schedule && show.schedule.days && show.schedule.days.length
+    ? show.schedule.days.map(frDayAbbrev).join('/') + (show.schedule.time? ' à '+frTime(show.schedule.time) : '')
+    : '';
+  html += '<div class="smeta">'+(show.network?'<span>'+escapeHtml(show.network)+'</span>':'')+(sched?'<span>'+I('clock')+' '+escapeHtml(sched)+'</span>':'')+'</div>';
+  html += '<div class="pbar"><div class="pfill" style="width:'+pct+'%"></div></div>';
+  html += '<div class="pct">'+p.watched+' / '+p.total+' épisodes vus</div>';
+  html += '</div></div>';
+
+  html += '<div class="seg">'+STATUSES.map(([k,label])=>
+    '<button class="'+(show.status===k?'on':'')+'" onclick="setStatus(\''+show.id+'\',\''+k+'\')">'+escapeHtml(label)+'</button>'
+  ).join('')+'</div>';
+
+  html += '<div class="stars">'+[1,2,3,4,5].map(i=>
+    '<span onclick="setRating(\''+show.id+'\','+i+')">'+I('star', show.rating>=i?'filled on':'')+'</span>'
+  ).join('')+'</div>';
+
+  html += '<div class="actionsrow">';
+  html += '<button onclick="refreshShow(\''+show.id+'\')">'+I('refresh')+' Actualiser</button>';
+  html += '<button class="danger" onclick="deleteShow(\''+show.id+'\')">'+I('trash')+' Supprimer</button>';
+  html += '</div>';
+
+  const nxt = nextEpisode(show);
+  const openSeasonNumber = nxt ? nxt.season : (show.seasons.length ? show.seasons[show.seasons.length-1].number : null);
+
+  show.seasons.forEach(se=>{
+    const total = se.episodes.filter(hasAired).length;
+    const watched = se.episodes.filter(e=>hasAired(e) && e.watched).length;
+    const label = se.number===0 ? 'Spéciaux' : 'Saison '+se.number;
+    html += '<details class="season"'+(se.number===openSeasonNumber?' open':'')+'>';
+    html += '<summary><span>'+label+'</span><span class="seasoncount">'+watched+'/'+total+' '+I('chevDown','chev')+'</span></summary>';
+    html += '<div class="seasonbtns"><button onclick="setSeasonWatched(\''+show.id+'\','+se.number+',true)">Tout marquer vu</button>'
+      + '<button onclick="setSeasonWatched(\''+show.id+'\','+se.number+',false)">Tout marquer non vu</button></div>';
+    se.episodes.forEach(ep=>{
+      const future = !hasAired(ep);
+      html += '<div class="ep'+(ep.watched?' watched':'')+(future?' future':'')+'" '+(future?'':'onclick="toggleEpisode(\''+show.id+'\',\''+ep.id+'\')"')+'>'
+        + '<span class="epchk">'+(future? I('lock') : (ep.watched? I('checkCircle') : I('circle')))+'</span>'
+        + '<span class="epnum">S'+pad(se.number)+'E'+pad(ep.number)+'</span>'
+        + '<span class="epname">'+escapeHtml(ep.name)+'</span>'
+        + '<span class="epdate">'+(future? 'à venir' : formatDateShort(ep.airdate))+'</span>'
+        + '</div>';
+    });
+    html += '</details>';
+  });
+
+  document.getElementById('sheetContent').innerHTML = html;
+}
+
+/* ---------- Réglages ---------- */
+function renderSettings(){
+  document.getElementById('themeSeg').innerHTML =
+    '<button class="'+(state.theme==='sombre'?'on':'')+'" onclick="setTheme(\'sombre\')">'+I('moon')+' Sombre</button>'
+    + '<button class="'+(state.theme==='clair'?'on':'')+'" onclick="setTheme(\'clair\')">'+I('sun')+' Clair</button>';
+  document.getElementById('exportBtn').innerHTML = I('download');
+  document.getElementById('importLbl').innerHTML = I('upload');
+  document.getElementById('resetBtn').innerHTML = I('trash');
+  document.getElementById('logoutBtn').innerHTML = I('logout');
+}
+function setTheme(t){
+  state.theme = t;
+  document.body.dataset.theme = t;
+  try{ localStorage.setItem('seriesTrackerTheme', t); }catch(e){}
+  renderSettings();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mes-series-'+todayIso()+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Export lancé');
+}
+function importData(file){
+  if(!supabaseClient || !currentUser){ toast('Connecte-toi avant d\'importer'); return; }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data || !Array.isArray(data.shows)) throw new Error('format invalide');
+      toast('Import en cours…');
+      for(const show of data.shows){
+        if(state.shows.some(s=>s.tvId===show.tvId)) continue;
+        const payload = { ...showToRow(show), user_id: currentUser.id };
+        await supabaseClient.from('shows').insert(payload);
+      }
+      await loadShows();
+      toast('Import réussi');
+    }catch(e){
+      toast('Fichier invalide');
+    }
+  };
+  reader.readAsText(file);
+}
+async function resetData(){
+  if(!confirm('Supprimer définitivement toutes tes séries ?')) return;
+  state.shows = [];
+  renderAll();
+  toast('Bibliothèque effacée');
+  if(supabaseClient && currentUser){
+    await supabaseClient.from('shows').delete().eq('user_id', currentUser.id);
+  }
+}
+
+/* ---------- Navigation onglets ---------- */
+function renderAll(){
+  renderBiblio();
+  renderUpNext();
+  renderCalendar();
+  renderStats();
+  renderSettings();
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  if(tab==='upnext') renderUpNext();
+  if(tab==='calendrier') renderCalendar();
+  if(tab==='stats') renderStats();
+  if(tab==='biblio') renderBiblio();
+}
+
+/* ---------- Init ---------- */
+document.body.dataset.theme = state.theme || 'sombre';
+
+const navIcons = {biblio:'tv', search:'search', upnext:'play', calendrier:'calendar', stats:'bar', settings:'sliders'};
+const navLabels = {biblio:'Bibliothèque', search:'Rechercher', upnext:'À suivre', calendrier:'Calendrier', stats:'Stats', settings:'Réglages'};
+document.querySelectorAll('nav button').forEach(btn=>{
+  const t = btn.dataset.tab;
+  btn.innerHTML = I(navIcons[t])+'<span>'+navLabels[t]+'</span>';
+  btn.addEventListener('click', ()=> switchTab(t));
+});
+
+document.getElementById('biblioSearch').addEventListener('input', renderBiblio);
+document.getElementById('searchInput').addEventListener('input', e=>{
+  clearTimeout(searchDebounce);
+  const v = e.target.value;
+  searchDebounce = setTimeout(()=> renderSearchList(v), 350);
+});
+document.getElementById('detailOverlay').addEventListener('click', e=>{
+  if(e.target.id==='detailOverlay') closeDetail();
+});
+document.getElementById('exportBtn').addEventListener('click', exportData);
+document.getElementById('resetBtn').addEventListener('click', resetData);
+document.getElementById('importFile').addEventListener('change', e=>{
+  if(e.target.files[0]) importData(e.target.files[0]);
+  e.target.value = '';
+});
+document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('authSubmitBtn').addEventListener('click', handleAuthSubmit);
+document.getElementById('authToggleBtn').addEventListener('click', ()=>{
+  authMode = authMode==='signin' ? 'signup' : 'signin';
+  document.getElementById('authError').textContent = '';
+  renderAuthMode();
+});
+document.getElementById('authPassword').addEventListener('keydown', e=>{
+  if(e.key==='Enter') handleAuthSubmit();
+});
+
+renderSettings();
+supabaseClient = initSupabase();
+initAuth();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>

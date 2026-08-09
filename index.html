@@ -192,6 +192,12 @@ details.season[open] summary .chev{transform:rotate(180deg)}
 .epnum{flex:none;color:var(--txt2);font-size:.76rem;width:52px}
 .epname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .epdate{flex:none;font-size:.72rem;color:var(--txt2)}
+.ep.chip{
+  border-top:none;background:var(--card2);border-radius:10px;padding:8px 10px;margin-top:2px;font-weight:600;
+}
+.ep.chip .epchk{color:var(--accent)}
+.ep.chip:active{background:var(--accent2);color:#fff}
+.ep.chip:active .epchk,.ep.chip:active .epnum{color:#fff}
 
 /* Stats */
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
@@ -647,6 +653,17 @@ function progress(show){
   const aired = allEpisodes(show).filter(hasAired);
   return { watched: aired.filter(e=>e.watched).length, total: aired.length };
 }
+function unwatchedCount(show){
+  const p = progress(show);
+  return p.total - p.watched;
+}
+function refreshAutoStatuses(){
+  state.shows.forEach(show=>{
+    const before = show.status;
+    maybeAutoStatus(show);
+    if(show.status !== before) syncShow(show);
+  });
+}
 function nextEpisode(show){
   return allEpisodes(show).find(e => !e.watched && hasAired(e));
 }
@@ -720,11 +737,17 @@ async function refreshShow(showId){
     maybeAutoStatus(show);
     syncShow(show);
     toast('Épisodes à jour');
-    renderDetail(showId);
-    renderBiblio();
+    refreshViews(showId);
   }catch(e){
     toast('Erreur réseau, réessaie.');
   }
+}
+function refreshViews(showId){
+  if(showId) renderDetail(showId);
+  renderBiblio();
+  renderUpNext();
+  renderCalendar();
+  renderStats();
 }
 function toggleEpisode(showId, epId){
   const show = state.shows.find(s=>s.id===showId);
@@ -733,8 +756,7 @@ function toggleEpisode(showId, epId){
     if(ep){ ep.watched = !ep.watched; break; }
   }
   maybeAutoStatus(show);
-  renderDetail(showId);
-  renderBiblio();
+  refreshViews(showId);
   syncShow(show);
 }
 function quickWatch(showId, epId, ev){
@@ -746,22 +768,19 @@ function setSeasonWatched(showId, seasonNumber, val){
   const se = show.seasons.find(s=>s.number===seasonNumber);
   se.episodes.forEach(e => { if(hasAired(e)) e.watched = val; });
   maybeAutoStatus(show);
-  renderDetail(showId);
-  renderBiblio();
+  refreshViews(showId);
   syncShow(show);
 }
 function setStatus(showId, status){
   const show = state.shows.find(s=>s.id===showId);
   show.status = status;
-  renderDetail(showId);
-  renderBiblio();
+  refreshViews(showId);
   syncShow(show);
 }
 function setRating(showId, val){
   const show = state.shows.find(s=>s.id===showId);
   show.rating = (show.rating===val) ? 0 : val;
-  renderDetail(showId);
-  renderBiblio();
+  refreshViews(showId);
   syncShow(show);
 }
 function deleteShow(showId){
@@ -770,7 +789,7 @@ function deleteShow(showId){
   if(!confirm('Supprimer « '+show.name+' » de ta bibliothèque ?')) return;
   state.shows = state.shows.filter(s=>s.id!==showId);
   closeDetail();
-  renderBiblio();
+  refreshViews();
   toast('Série supprimée');
   deleteShowRow(showId);
 }
@@ -841,18 +860,22 @@ async function renderSearchList(q){
 /* ---------- Rendu : À suivre ---------- */
 function renderUpNext(){
   const active = state.shows.filter(s=>s.status==='en_cours' || s.status==='a_voir');
-  const withNext = active.map(s=>({show:s, next:nextEpisode(s)})).filter(x=>x.next);
+  const withNext = active.map(s=>({show:s, next:nextEpisode(s), left:unwatchedCount(s)})).filter(x=>x.next);
   const upEl = document.getElementById('upnextList');
   if(!withNext.length){
     upEl.innerHTML = '<div class="empty">'+I('play')+'<p>Rien à regarder pour l\'instant.</p></div>';
   }else{
     withNext.sort((a,b)=> (a.show.status==='en_cours'?0:1) - (b.show.status==='en_cours'?0:1));
-    upEl.innerHTML = withNext.map(({show,next})=>
+    upEl.innerHTML = withNext.map(({show,next,left})=>
       '<div class="show" onclick="openDetail(\''+show.id+'\')">'
       + '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">'
       + '<div class="sinfo"><div class="stitle">'+escapeHtml(show.name)+'</div>'
-      + '<div class="smeta"><span class="badge '+show.status+'">'+statusLabel(show.status)+'</span></div>'
-      + '<button class="nextbtn" onclick="quickWatch(\''+show.id+'\',\''+next.id+'\',event)">'+I('check')+' S'+pad(next.season)+'E'+pad(next.number)+' · '+escapeHtml(next.name)+'</button>'
+      + '<div class="smeta"><span class="badge '+show.status+'">'+statusLabel(show.status)+'</span><span>'+left+' épisode'+(left>1?'s':'')+' non vu'+(left>1?'s':'')+'</span></div>'
+      + '<div class="ep chip" onclick="quickWatch(\''+show.id+'\',\''+next.id+'\',event)">'
+        + '<span class="epchk">'+I('circle')+'</span>'
+        + '<span class="epnum">S'+pad(next.season)+'E'+pad(next.number)+'</span>'
+        + '<span class="epname">'+escapeHtml(next.name)+'</span>'
+      + '</div>'
       + '</div></div>'
     ).join('');
   }
@@ -1037,6 +1060,7 @@ async function resetData(){
 
 /* ---------- Navigation onglets ---------- */
 function renderAll(){
+  refreshAutoStatuses();
   renderBiblio();
   renderUpNext();
   renderCalendar();

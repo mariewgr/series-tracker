@@ -44,6 +44,8 @@ header{
 }
 header h1{font-size:1.35rem;font-weight:800;letter-spacing:.3px}
 header h1 span{color:var(--accent)}
+#refreshAllBtn.spin .icn{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 main{padding:14px 16px calc(30px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 h2{font-size:.8rem;margin:18px 2px 10px;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
 .tab{display:none}
@@ -280,6 +282,7 @@ details.season[open] summary .chev{transform:rotate(180deg)}
 <div id="appRoot" class="hidden">
 <header>
   <h1>Mes <span>Séries</span></h1>
+  <button class="addbtn" id="refreshAllBtn" style="background:var(--card2);color:var(--txt);width:36px;height:36px" title="Actualiser"></button>
 </header>
 
 <main>
@@ -554,6 +557,14 @@ async function loadShows(){
   if(error){ toast('Erreur de chargement de ta bibliothèque'); return; }
   state.shows = (data||[]).map(rowToShow);
   renderAll();
+}
+async function refreshAllShows(){
+  if(!supabaseClient || !currentUser){ toast('Connecte-toi pour synchroniser'); return; }
+  const btn = document.getElementById('refreshAllBtn');
+  btn.classList.add('spin');
+  await loadShows();
+  btn.classList.remove('spin');
+  toast('Bibliothèque synchronisée');
 }
 function syncShow(show){
   if(!supabaseClient) return;
@@ -1104,6 +1115,8 @@ document.getElementById('importFile').addEventListener('change', e=>{
   e.target.value = '';
 });
 document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('refreshAllBtn').innerHTML = I('refresh');
+document.getElementById('refreshAllBtn').addEventListener('click', refreshAllShows);
 document.getElementById('authSubmitBtn').addEventListener('click', handleAuthSubmit);
 document.getElementById('authToggleBtn').addEventListener('click', ()=>{
   authMode = authMode==='signin' ? 'signup' : 'signin';

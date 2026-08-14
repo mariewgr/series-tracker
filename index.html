@@ -146,13 +146,14 @@ nav button.active{color:var(--accent)}
   border-radius:20px 20px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
   margin:0 auto;max-width:640px;
 }
-.sheethead{display:flex;gap:14px;margin-bottom:14px}
+.sheethead{display:flex;gap:14px;margin-bottom:14px;padding-right:42px}
 .sheethead .poster{width:84px;height:122px}
 .sheethead .sinfo{gap:6px}
 .sheethead .stitle{font-size:1.2rem;white-space:normal}
 .closebtn{
   position:sticky;top:0;float:right;width:32px;height:32px;border-radius:10px;border:none;
   background:var(--card);color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  z-index:5;
 }
 .seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .seg button{

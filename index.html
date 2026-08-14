@@ -146,14 +146,17 @@ nav button.active{color:var(--accent)}
   border-radius:20px 20px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
   margin:0 auto;max-width:640px;
 }
-.sheethead{display:flex;gap:14px;margin-bottom:14px;padding-right:42px}
+.sheettopbar{
+  position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;
+  margin:-18px -18px 10px;padding:12px 12px 0;background:var(--bg2);
+}
+.sheethead{display:flex;gap:14px;margin-bottom:14px}
 .sheethead .poster{width:84px;height:122px}
 .sheethead .sinfo{gap:6px}
 .sheethead .stitle{font-size:1.2rem;white-space:normal}
 .closebtn{
-  position:sticky;top:0;float:right;width:32px;height:32px;border-radius:10px;border:none;
+  width:32px;height:32px;border-radius:10px;border:none;flex:none;
   background:var(--card);color:var(--txt);display:flex;align-items:center;justify-content:center;cursor:pointer;
-  z-index:5;
 }
 .seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .seg button{
@@ -962,7 +965,7 @@ function renderDetail(showId){
   if(!show) return;
   const p = progress(show);
   const pct = p.total? Math.round(p.watched/p.total*100) : 0;
-  let html = '<button class="closebtn" onclick="closeDetail()">'+I('x')+'</button>';
+  let html = '<div class="sheettopbar"><button class="closebtn" onclick="closeDetail()">'+I('x')+'</button></div>';
   html += '<div class="sheethead">';
   html += '<img class="poster" src="'+escapeHtml(show.poster)+'" onerror="this.style.visibility=\'hidden\'">';
   html += '<div class="sinfo"><div class="stitle">'+escapeHtml(show.name)+'</div>';

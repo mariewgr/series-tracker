@@ -141,14 +141,22 @@ nav button.active{color:var(--accent)}
   display:flex;align-items:flex-end;
 }
 .overlay.hidden{display:none}
+/* padding-top à 0 : c'est la barre sticky qui fournit l'espace du haut.
+   Sinon `top:0` du sticky se cale sur le bord intérieur (après padding),
+   la barre se décale vers le bas et son fond recouvre le titre. */
 .sheet{
   background:var(--bg2);width:100%;max-height:92vh;overflow-y:auto;
-  border-radius:20px 20px 0 0;padding:18px 18px calc(24px + env(safe-area-inset-bottom));
+  border-radius:20px 20px 0 0;
+  padding:0 18px calc(24px + env(safe-area-inset-bottom));
   margin:0 auto;max-width:640px;
 }
+/* La safe-area iOS est portée par le padding de la barre, pour que la croix
+   ne finisse jamais sous la barre d'état (où iOS intercepte les touches). */
 .sheettopbar{
   position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;
-  margin:-18px -18px 10px;padding:12px 12px 0;background:var(--bg2);
+  margin:0 -18px 10px;
+  padding:calc(12px + env(safe-area-inset-top)) 12px 12px;
+  background:var(--bg2);
 }
 .sheethead{display:flex;gap:14px;margin-bottom:14px}
 .sheethead .poster{width:84px;height:122px}
@@ -392,7 +400,13 @@ const ICONS = {
 function I(name, cls){ return '<svg class="icn'+(cls?' '+cls:'')+'" viewBox="0 0 24 24">'+ICONS[name]+'</svg>'; }
 
 /* ---------- État ---------- */
-let state = { theme: localStorage.getItem('seriesTrackerTheme') || 'sombre', shows: [] };
+function savedTheme(){
+  /* localStorage peut lever (navigation privée, contexte restreint) : sans ce
+     garde-fou, toute l'app cesse de démarrer pour un simple choix de thème. */
+  try{ return localStorage.getItem('seriesTrackerTheme') || 'sombre'; }
+  catch(e){ return 'sombre'; }
+}
+let state = { theme: savedTheme(), shows: [] };
 let currentDetailId = null;
 let biblioFilter = 'tous';
 let currentUser = null;
